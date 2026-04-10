@@ -1,0 +1,3 @@
+{"created_at_ms":1775806690154,"model":"openai/gpt-4o-mini","session_id":"session-1775806690154-0","type":"session_meta","updated_at_ms":1775806692749,"version":1}
+{"message":{"blocks":[{"text":"hi","type":"text"}],"role":"user"},"type":"message"}
+{"message":{"blocks":[{"text":"Hello! How can I assist you today with your software engineering tasks?","type":"text"}],"role":"assistant","usage":{"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"input_tokens":2394,"output_tokens":15}},"type":"message"}
