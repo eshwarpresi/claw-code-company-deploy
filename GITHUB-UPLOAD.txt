@@ -1,0 +1,17 @@
+﻿# How to Upload to GitHub
+
+1. Create a new repository on GitHub called "claw-code-company-deploy"
+
+2. Run these commands in PowerShell:
+
+   cd C:\temp\claw-deploy
+   git init
+   git add .
+   git commit -m "Company deployment package for claw-code"
+   git branch -M main
+   git remote add origin https://github.com/YOUR-COMPANY/claw-code-company-deploy.git
+   git push -u origin main
+
+3. Replace YOUR-COMPANY with your actual GitHub organization name
+
+4. Share the repository link with your team: https://github.com/YOUR-COMPANY/claw-code-company-deploy
