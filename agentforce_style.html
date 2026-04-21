@@ -1,0 +1,497 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>PAS Freight AI - Agentforce Style</title>
+    <meta charset="UTF-8">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Floating Chat Button */
+        #pasfreight-chat-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            border: none;
+            z-index: 999999;
+        }
+        
+        #pasfreight-chat-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .chat-icon {
+            font-size: 26px;
+            color: white;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Chat Window */
+        #pasfreight-chat-window {
+            position: fixed;
+            bottom: 82px;
+            right: 20px;
+            width: 360px;
+            height: 500px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 999998;
+            border: none;
+            overflow: hidden;
+            flex-direction: column;
+        }
+        
+        /* Header */
+        .chat-header {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .avatar {
+            width: 32px;
+            height: 32px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        
+        .header-text h3 {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .header-text p {
+            font-size: 9px;
+            opacity: 0.8;
+        }
+        
+        .close-chat {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-chat:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        /* Messages */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            background: #f8f9fa;
+        }
+        
+        .message {
+            margin-bottom: 12px;
+            display: flex;
+        }
+        
+        .user-message {
+            justify-content: flex-end;
+        }
+        
+        .bot-message {
+            justify-content: flex-start;
+        }
+        
+        .bubble {
+            max-width: 85%;
+            padding: 8px 12px;
+            border-radius: 18px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .user-message .bubble {
+            background: #2a5298;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .bot-message .bubble {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 4px;
+        }
+        
+        /* Buttons */
+        .service-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .service-btn {
+            background: #f0f2f5;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .service-btn:hover {
+            background: #2a5298;
+            color: white;
+        }
+        
+        .main-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .main-btn {
+            flex: 1;
+            background: #1e3c72;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .main-btn:hover {
+            background: #2a5298;
+        }
+        
+        .sub-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .sub-btn {
+            background: #e9ecef;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+        
+        .sub-btn:hover {
+            background: #2a5298;
+            color: white;
+        }
+        
+        .contact-info {
+            background: #f0f2f5;
+            padding: 8px;
+            border-radius: 10px;
+            margin-top: 6px;
+            font-size: 10px;
+        }
+        
+        /* Input */
+        .chat-input {
+            padding: 10px;
+            background: white;
+            border-top: 1px solid #e5e5e5;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .chat-input input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 12px;
+            outline: none;
+        }
+        
+        .chat-input input:focus {
+            border-color: #2a5298;
+        }
+        
+        .chat-input button {
+            background: #2a5298;
+            color: white;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .typing {
+            display: inline-flex;
+            gap: 4px;
+            padding: 4px 0;
+        }
+        
+        .typing span {
+            width: 6px;
+            height: 6px;
+            background: #999;
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite;
+        }
+        
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+        
+        @media (max-width: 500px) {
+            #pasfreight-chat-window {
+                width: 100%;
+                height: 100%;
+                bottom: 0;
+                right: 0;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="pasfreight-chat-btn">
+        <span class="chat-icon">💬</span>
+        <span class="notification-badge" id="notificationBadge" style="display: none;">1</span>
+    </button>
+    
+    <div id="pasfreight-chat-window">
+        <div class="chat-header">
+            <div class="header-info">
+                <div class="avatar">📦</div>
+                <div class="header-text">
+                    <h3>PAS Freight AI</h3>
+                    <p>Logistics Assistant | 24/7</p>
+                </div>
+            </div>
+            <button class="close-chat" id="closeChatBtn">✕</button>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">
+                <div class="bubble">Hi, I'm PAS Freight AI Assistant. I can help with import/export, customs clearance, and cargo services. Ask me things like 'What services do you offer?' or 'Contact sales team'.</div>
+            </div>
+            <div class="message bot-message">
+                <div class="bubble">
+                    <div class="main-buttons">
+                        <button class="main-btn" onclick="showServices()">📦 Services</button>
+                        <button class="main-btn" onclick="showContact()">📞 Contact</button>
+                        <button class="main-btn" onclick="showAbout()">🏢 About</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <input type="text" id="userInput" placeholder="Ask me anything..." autocomplete="off">
+            <button id="sendBtn">➤</button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const chatBtn = document.getElementById('pasfreight-chat-btn');
+        const chatWindow = document.getElementById('pasfreight-chat-window');
+        const closeChatBtn = document.getElementById('closeChatBtn');
+        const notificationBadge = document.getElementById('notificationBadge');
+        const messagesDiv = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        
+        let isOpen = false;
+        let notified = false;
+        
+        // Toggle chat
+        chatBtn.addEventListener('click', function() {
+            if (isOpen) {
+                chatWindow.style.display = 'none';
+                isOpen = false;
+            } else {
+                chatWindow.style.display = 'flex';
+                isOpen = true;
+                notificationBadge.style.display = 'none';
+                notified = true;
+            }
+        });
+        
+        closeChatBtn.addEventListener('click', function() {
+            chatWindow.style.display = 'none';
+            isOpen = false;
+        });
+        
+        setTimeout(function() {
+            if (!isOpen && !notified) {
+                notificationBadge.style.display = 'flex';
+            }
+        }, 30000);
+        
+        function addMessage(text, isUser) {
+            const div = document.createElement('div');
+            div.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            div.innerHTML = `<div class="bubble">${text}</div>`;
+            messagesDiv.appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function showTyping() {
+            const div = document.createElement('div');
+            div.className = 'message bot-message';
+            div.id = 'typing';
+            div.innerHTML = '<div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+            messagesDiv.appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function hideTyping() {
+            const typing = document.getElementById('typing');
+            if (typing) typing.remove();
+        }
+        
+        // Service Functions
+        window.showServices = function() {
+            addMessage("Services", true);
+            addMessage("We offer: Air Freight, Sea Freight, Customs Clearance, Domestic Trucking, Courier Services, and Warehousing. Let me know if you need details on any specific service!", false);
+        };
+        
+        window.showContact = function() {
+            addMessage("Contact", true);
+            addMessage("📞 Phone: +91 90361 01201\n✉️ Email: shivu@pasfreight.com\n📍 Bangalore, India\nOur team is available 24/7!", false);
+        };
+        
+        window.showAbout = function() {
+            addMessage("About", true);
+            addMessage("PAS Freight Services Pvt Ltd - Bangalore's leading logistics provider since 2016. WCA & GLA Certified. 8+ years of expertise in import/export, customs clearance, and cargo services.", false);
+        };
+        
+        // Smart AI Response - Agentforce Style
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+            userInput.value = '';
+            addMessage(text, true);
+            showTyping();
+            
+            try {
+                const response = await fetch('https://api.openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer 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'
+                    },
+                    body: JSON.stringify({
+                        model: 'openai/gpt-4o-mini',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: `You are PAS Freight AI Assistant for PAS Freight Services Pvt Ltd.
+
+COMPANY INFO:
+- Services: Import/Export (Air/Sea), Customs Clearance, Domestic Trucking, Courier, Warehousing
+- Contact: +91 90361 01201
+- Email: shivu@pasfreight.com
+- Certifications: WCA (115513), GLA (1166251)
+
+RESPONSE STYLE (like Agentforce):
+- Be professional, crisp, and direct
+- Keep responses short (1-2 sentences)
+- Don't use excessive emojis or emotional language
+- For greetings: "Hi there! How can I assist you with your logistics needs today?"
+- For name: "I'm PAS Freight AI Assistant. How can I help with your logistics needs?"
+- For services: List them directly
+- For off-topic: Politely redirect to logistics
+- For rates: "Please call +91 90361 01201 for exact rates"
+
+EXAMPLES:
+User: "hi" -> "Hi there! How can I assist you with your logistics needs today?"
+User: "whats your name" -> "I'm PAS Freight AI Assistant. How can I help with your logistics needs?"
+User: "what services" -> "We offer Import/Export (Air/Sea), Customs Clearance, Domestic Trucking, and Courier services."
+User: "your waste" -> "I'm here to help with logistics. Let me know if you need assistance with import/export or cargo services."
+User: "rates" -> "For exact rates, please call +91 90361 01201. Our team will provide you the best quote."
+
+Be professional, direct, and helpful.`
+                            },
+                            { role: 'user', content: text }
+                        ],
+                        max_tokens: 100,
+                        temperature: 0.6
+                    })
+                });
+                const data = await response.json();
+                hideTyping();
+                const reply = data.choices[0].message.content;
+                addMessage(reply, false);
+            } catch(error) {
+                hideTyping();
+                addMessage("For assistance with PAS Freight services, call +91 90361 01201 or email shivu@pasfreight.com", false);
+            }
+        }
+        
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>

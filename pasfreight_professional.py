@@ -11,72 +11,510 @@ HTML = '''
 <html>
 <head>
     <title>PAS Freight AI</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: 'Segoe UI', Arial; background: #1e3c72; margin: 0; padding: 20px; }
-        .chat { max-width: 800px; margin: 0 auto; background: white; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
-        .header { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
-        .header h2 { margin: 0; }
-        .header p { margin: 5px 0 0; opacity: 0.9; }
-        .messages { height: 500px; overflow-y: auto; padding: 20px; background: #f8f9fa; }
-        .msg { margin-bottom: 15px; display: flex; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #343541;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            height: 100vh;
+            background: #343541;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background: #202123;
+            color: #ececec;
+            padding: 12px 20px;
+            text-align: center;
+            border-bottom: 1px solid #4a4b53;
+        }
+        .header h1 { font-size: 16px; font-weight: 500; }
+        .header p { font-size: 11px; opacity: 0.7; margin-top: 3px; }
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .msg {
+            margin-bottom: 20px;
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         .user { justify-content: flex-end; }
         .bot { justify-content: flex-start; }
-        .bubble { padding: 10px 15px; border-radius: 18px; max-width: 70%; line-height: 1.4; }
-        .user .bubble { background: #2a5298; color: white; }
-        .bot .bubble { background: white; color: #333; border: 1px solid #ddd; }
-        .input-area { padding: 20px; display: flex; gap: 10px; background: white; border-top: 1px solid #ddd; }
-        .input-area input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; font-size: 14px; }
-        .input-area button { padding: 12px 25px; background: #2a5298; color: white; border: none; border-radius: 25px; cursor: pointer; }
-        .typing { color: #999; font-style: italic; }
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .bot-avatar { background: #10a37f; color: white; margin-right: 12px; }
+        .user-avatar { background: #5436da; color: white; margin-left: 12px; order: 2; }
+        .bubble {
+            max-width: 80%;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .user .bubble { background: #5436da; color: white; border-bottom-right-radius: 4px; }
+        .bot .bubble { background: #444654; color: #ececec; border-bottom-left-radius: 4px; }
+        .service-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .service-btn {
+            background: #40414f;
+            border: 1px solid #565869;
+            padding: 10px 16px;
+            border-radius: 25px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #ececec;
+            transition: all 0.2s;
+        }
+        .service-btn:hover { background: #565869; transform: scale(0.98); }
+        .contact-info {
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .input-container {
+            padding: 16px 20px;
+            background: #40414f;
+            border-top: 1px solid #4a4b53;
+        }
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #40414f;
+            border: 1px solid #565869;
+            border-radius: 28px;
+            padding: 6px 8px 6px 18px;
+        }
+        .input-wrapper input {
+            flex: 1;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+        .input-wrapper input::placeholder { color: #8e8ea0; }
+        .tool-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 6px;
+            border-radius: 50%;
+            color: #8e8ea0;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tool-btn:hover { background: #565869; color: white; }
+        .voice-active { background: #ef4444 !important; color: white !important; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .send-btn {
+            background: #10a37f;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        .send-btn:hover { background: #1a7f64; }
+        .quick-buttons {
+            padding: 12px 20px;
+            background: #343541;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            border-bottom: 1px solid #4a4b53;
+        }
+        .quick-btn {
+            background: #40414f;
+            border: 1px solid #565869;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #ececec;
+        }
+        .quick-btn:hover { background: #565869; }
+        .footer {
+            text-align: center;
+            padding: 8px;
+            font-size: 10px;
+            color: #565869;
+            background: #343541;
+        }
+        .image-preview {
+            max-width: 150px;
+            max-height: 120px;
+            border-radius: 12px;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+        .typing {
+            display: inline-flex;
+            gap: 4px;
+            padding: 4px 0;
+        }
+        .typing span {
+            width: 6px;
+            height: 6px;
+            background: #8e8ea0;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite;
+        }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+        .messages::-webkit-scrollbar { width: 6px; }
+        .messages::-webkit-scrollbar-track { background: #40414f; }
+        .messages::-webkit-scrollbar-thumb { background: #565869; border-radius: 3px; }
     </style>
 </head>
 <body>
-    <div class="chat">
-        <div class="header">
-            <h2>📦 PAS Freight Services Pvt Ltd</h2>
-            <p>Logistics & Freight Solutions | Bangalore | WCA & GLA Certified</p>
-        </div>
-        <div class="messages" id="messages">
-            <div class="msg bot">
-                <div class="bubble">Namaste! 👋 I'm PAS Freight's AI Assistant. I can help you with freight forwarding, customs clearance, shipping rates, and more. What would you like to know?</div>
-            </div>
-        </div>
-        <div class="input-area">
-            <input type="text" id="input" placeholder="Ask about our logistics services..." autocomplete="off">
-            <button onclick="send()">Send</button>
+<div class="chat-container">
+    <div class="header">
+        <h1>📦 PAS Freight Services Pvt Ltd</h1>
+        <p>WCA & GLA Certified | 24/7 Support</p>
+    </div>
+
+    <div class="messages" id="messages">
+        <div class="msg bot">
+            <div class="avatar bot-avatar">🤖</div>
+            <div class="bubble">Hi, I'm PAS Freight AI Assistant. I can help with import/export, customs clearance, and cargo services. Ask me things like 'What services do you offer?' or 'Contact sales team'.</div>
         </div>
     </div>
-    <script>
-        const messages = document.getElementById('messages');
-        const input = document.getElementById('input');
-        function addMessage(text, isUser) {
-            const div = document.createElement('div');
-            div.className = 'msg ' + (isUser ? 'user' : 'bot');
-            div.innerHTML = '<div class="bubble">' + text.replace(/\\n/g, '<br>') + '</div>';
-            messages.appendChild(div);
-            messages.scrollTop = messages.scrollHeight;
+
+    <div class="quick-buttons">
+        <button class="quick-btn" onclick="showMainMenu()">📦 Main Menu</button>
+        <button class="quick-btn" onclick="showContact()">📞 Contact Us</button>
+        <button class="quick-btn" onclick="showAbout()">🏢 About Us</button>
+    </div>
+
+    <div class="input-container">
+        <div class="input-wrapper">
+            <input type="text" id="userInput" placeholder="Ask me anything about logistics...">
+            <button class="tool-btn" id="voiceBtn" title="Voice Input">🎤</button>
+            <button class="tool-btn" id="cameraBtn" title="Upload Screenshot">📷</button>
+            <button class="send-btn" id="sendBtn">➤</button>
+            <input type="file" id="cameraInput" style="display:none" accept="image/*">
+        </div>
+    </div>
+    <div class="footer">PAS Freight | 24/7 Support | +91 90361 01201</div>
+</div>
+
+<script>
+    let recognition = null;
+    let isListening = false;
+    let isVoiceMode = false;
+
+    if ('webkitSpeechRecognition' in window) {
+        recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-IN';
+        
+        recognition.onresult = function(event) {
+            const text = event.results[0][0].transcript;
+            document.getElementById('userInput').value = text;
+            document.getElementById('voiceBtn').classList.remove('voice-active');
+            isListening = false;
+            isVoiceMode = true;
+            sendMessage();
+        };
+        
+        recognition.onerror = function() {
+            document.getElementById('voiceBtn').classList.remove('voice-active');
+            isListening = false;
+        };
+        
+        recognition.onend = function() {
+            document.getElementById('voiceBtn').classList.remove('voice-active');
+            isListening = false;
+        };
+    }
+    
+    document.getElementById('voiceBtn').onclick = function() {
+        if (!recognition) {
+            addMessage("Voice support requires Chrome browser.", false);
+            return;
         }
-        async function send() {
-            const text = input.value.trim();
-            if (!text) return;
-            input.value = '';
-            addMessage(text, true);
-            const typing = document.createElement('div');
-            typing.className = 'msg bot';
-            typing.innerHTML = '<div class="bubble typing">Thinking...</div>';
-            messages.appendChild(typing);
-            messages.scrollTop = messages.scrollHeight;
-            const res = await fetch('/chat', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({message: text})
-            });
-            const data = await res.json();
-            typing.remove();
-            addMessage(data.reply, false);
+        if (isListening) {
+            recognition.stop();
+        } else {
+            recognition.start();
+            this.classList.add('voice-active');
+            isListening = true;
         }
-        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') send(); });
-    </script>
+    };
+    
+    document.getElementById('cameraBtn').onclick = () => document.getElementById('cameraInput').click();
+    document.getElementById('cameraInput').onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const div = document.createElement('div');
+                div.className = 'msg user';
+                div.innerHTML = `<div class="avatar user-avatar">👤</div>
+                                <div class="bubble">📷 Screenshot uploaded</div>`;
+                document.getElementById('messages').appendChild(div);
+                div.scrollIntoView({ behavior: 'smooth' });
+                
+                setTimeout(() => {
+                    addMessage("Thanks for sharing. Our team will review it. For immediate help, call +91 90361 01201", false);
+                }, 500);
+            };
+            reader.readAsDataURL(file);
+        }
+        this.value = '';
+    };
+
+    function addMessage(text, isUser) {
+        const div = document.createElement('div');
+        div.className = 'msg ' + (isUser ? 'user' : 'bot');
+        div.innerHTML = `<div class="avatar ${isUser ? 'user-avatar' : 'bot-avatar'}">${isUser ? '👤' : '🤖'}</div>
+                        <div class="bubble">${text}</div>`;
+        document.getElementById('messages').appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function addContactInfo(title, numbers, emails) {
+        let html = `<div class="contact-info"><strong>${title}</strong><br>`;
+        if (numbers && numbers.length) {
+            html += `📞 Phone:<br>`;
+            numbers.forEach(num => { html += `   ${num}<br>`; });
+        }
+        if (emails && emails.length) {
+            html += `✉️ Email:<br>`;
+            emails.forEach(email => { html += `   ${email}<br>`; });
+        }
+        html += `</div>`;
+        
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `<div class="avatar bot-avatar">🤖</div><div class="bubble">${html}</div>`;
+        document.getElementById('messages').appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showMainMenu() {
+        addMessage("Main Menu", true);
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `<div class="avatar bot-avatar">🤖</div>
+                        <div class="bubble">📦 Select a service:<br>
+                        <div class="service-buttons">
+                            <button class="service-btn" onclick="showImportOptions()">📥 IMPORT</button>
+                            <button class="service-btn" onclick="showExportOptions()">📤 EXPORT</button>
+                            <button class="service-btn" onclick="showCustoms()">📋 CUSTOMS CLEARANCE</button>
+                            <button class="service-btn" onclick="showCargo()">🚚 CARGO</button>
+                        </div></div>`;
+        document.getElementById('messages').appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showImportOptions() {
+        addMessage("IMPORT", true);
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `<div class="avatar bot-avatar">🤖</div>
+                        <div class="bubble">📥 IMPORT - Select Mode:<br>
+                        <div class="service-buttons">
+                            <button class="service-btn" onclick="showImportAir()">✈️ AIR</button>
+                            <button class="service-btn" onclick="showImportSea()">🚢 SEA</button>
+                        </div></div>`;
+        document.getElementById('messages').appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showImportAir() {
+        addMessage("IMPORT - AIR", true);
+        addContactInfo("IMPORT AIR FREIGHT", 
+            ["+91 99869 42772", "+91 63615 21413"],
+            ["gj@pasfreight.com", "rachana@pasfreight.com"]);
+    }
+
+    function showImportSea() {
+        addMessage("IMPORT - SEA", true);
+        addContactInfo("IMPORT SEA FREIGHT (FCL/LCL)", 
+            ["+91 93648 81371", "+91 63615 21413"],
+            ["vinodh@pasfreight.com", "gj@pasfreight.com"]);
+    }
+
+    function showExportOptions() {
+        addMessage("EXPORT", true);
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `<div class="avatar bot-avatar">🤖</div>
+                        <div class="bubble">📤 EXPORT - Select Mode:<br>
+                        <div class="service-buttons">
+                            <button class="service-btn" onclick="showExportAir()">✈️ AIR</button>
+                            <button class="service-btn" onclick="showExportSea()">🚢 SEA</button>
+                        </div></div>`;
+        document.getElementById('messages').appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showExportAir() {
+        addMessage("EXPORT - AIR", true);
+        addContactInfo("EXPORT AIR FREIGHT", 
+            ["+91 93648 81371", "+91 63615 26659"],
+            ["vinodh@pasfreight.com", "kavan@pasfreight.com"]);
+    }
+
+    function showExportSea() {
+        addMessage("EXPORT - SEA", true);
+        addContactInfo("EXPORT SEA FREIGHT", 
+            ["+91 93648 81371", "+91 63615 26659"],
+            ["vinodh@pasfreight.com", "kavan@pasfreight.com"]);
+    }
+
+    function showCustoms() {
+        addMessage("CUSTOMS CLEARANCE", true);
+        addContactInfo("CUSTOMS CLEARANCE", 
+            ["+91 63615 26664"],
+            ["ajith@pasfreight.com", "edi.blr@pasfreight.com"]);
+    }
+
+    function showCargo() {
+        addMessage("CARGO", true);
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `<div class="avatar bot-avatar">🤖</div>
+                        <div class="bubble">🚚 CARGO - Select Type:<br>
+                        <div class="service-buttons">
+                            <button class="service-btn" onclick="showDomesticCargo()">🇮🇳 DOMESTIC</button>
+                            <button class="service-btn" onclick="showInternationalCargo()">🌍 INTERNATIONAL</button>
+                        </div></div>`;
+        document.getElementById('messages').appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showDomesticCargo() {
+        addMessage("DOMESTIC CARGO", true);
+        addContactInfo("DOMESTIC CARGO", 
+            ["+91 63615 26659"],
+            ["kavan@pasfreight.com", "info@pasfreight.com"]);
+    }
+
+    function showInternationalCargo() {
+        addMessage("INTERNATIONAL CARGO", true);
+        addContactInfo("INTERNATIONAL CARGO", 
+            ["+91 63615 26659"],
+            ["kavan@pasfreight.com", "info@pasfreight.com"]);
+    }
+
+    function showContact() {
+        addMessage("Contact Us", true);
+        addContactInfo("PAS FREIGHT CONTACT", 
+            ["+91 90361 01201"],
+            ["shivu@pasfreight.com", "info@pasfreight.com"]);
+    }
+
+    function showAbout() {
+        addMessage("About Us", true);
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `<div class="avatar bot-avatar">🤖</div>
+                        <div class="bubble">🏢 PAS Freight Services Pvt Ltd
+
+📍 Address: Site No:171, Arkavathey Layout, 7th Block, Jakkur-BDA, Bangalore - 560092
+
+📞 Contact: +91 90361 01201
+
+✉️ Email: shivu@pasfreight.com
+
+✅ Certifications: WCA (115513), GLA (1166251)
+
+🌟 Experience: Over 8 years in logistics
+
+💼 Services: Import, Export, Customs, Cargo, Air & Sea Freight
+
+🎯 Vision: To be Bangalore's most trusted logistics partner</div>`;
+        document.getElementById('messages').appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('userInput');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        addMessage(text, true);
+        
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'msg bot';
+        typingDiv.id = 'typing';
+        typingDiv.innerHTML = `<div class="avatar bot-avatar">🤖</div><div class="typing"><span></span><span></span><span></span></div>`;
+        document.getElementById('messages').appendChild(typingDiv);
+        typingDiv.scrollIntoView({ behavior: 'smooth' });
+        
+        const res = await fetch('/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: text})
+        });
+        const data = await res.json();
+        
+        const typing = document.getElementById('typing');
+        if (typing) typing.remove();
+        
+        addMessage(data.reply, false);
+        
+        if (isVoiceMode && 'speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(data.reply);
+            utterance.lang = 'en-IN';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+            isVoiceMode = false;
+        }
+    }
+
+    document.getElementById('sendBtn').onclick = () => { isVoiceMode = false; sendMessage(); };
+    document.getElementById('userInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            isVoiceMode = false;
+            sendMessage();
+        }
+    });
+</script>
 </body>
 </html>
 '''
@@ -90,24 +528,28 @@ def chat():
     data = request.get_json()
     user_msg = data.get('message', '')
     
-    system_prompt = """You are the official AI assistant for PAS Freight Services Pvt Ltd, a logistics company based in Bangalore, India with over 8 years of experience.
+    system_prompt = """You are PAS Freight AI Assistant. Be professional, crisp, and helpful.
 
-COMPANY INFORMATION:
-- Services: Air freight, Sea freight, Customs clearance, Trucking, Warehousing, International shipping, Supply chain management
-- Contact: +91 9071660066, +91 9164466664
-- Email: shivu@pasfreight.com
-- Address: Site No:171, Arkavathey Layout, 7th Block, Jakkur-BDA, Bangalore - 560092
-- Certifications: WCA Member ID 115513, GLA Member ID 1166251
-- Website: https://pasfreight.com
+RESPONSE RULES:
+- Keep responses short and professional (1-2 sentences)
+- Don't use excessive emojis or emotional language
+- For personal questions (name, age, etc.) -> Redirect to logistics services
+- For off-topic questions -> Politely redirect to PAS Freight services
+- Always provide helpful, actionable information
 
-When answering:
-- Be helpful, professional, and friendly
-- Provide accurate information about PAS Freight's services
-- For rates: explain they vary by weight, dimensions, and destination, and offer to connect with the team
-- Always include contact information when appropriate
-- Answer naturally like a helpful customer service representative
+Company Info:
+PAS Freight Services - Logistics provider in Bangalore
+Services: Import/Export (Air/Sea), Customs Clearance, Cargo
+Contact: +91 90361 01201
+Email: shivu@pasfreight.com
 
-Answer the user's question about PAS Freight services professionally and helpfully."""
+Examples:
+User: "hi" -> "Hi there! How can I help with your logistics needs today?"
+User: "whats your name" -> "I'm PAS Freight AI Assistant. How can I help with your logistics needs?"
+User: "your waste" -> "I'm here to help with logistics. Let me know if you need assistance with import/export or cargo services."
+User: "what services" -> "We offer Import/Export (Air/Sea), Customs Clearance, and Domestic/International Cargo services."
+
+Be professional, direct, and helpful."""
 
     try:
         response = openai.ChatCompletion.create(
@@ -116,19 +558,17 @@ Answer the user's question about PAS Freight services professionally and helpful
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_msg}
             ],
-            max_tokens=500,
+            max_tokens=150,
             temperature=0.7
         )
         reply = response['choices'][0]['message']['content']
-        print(f"✓ Answered: {user_msg[:50]}")
         return jsonify({'reply': reply})
     except Exception as e:
-        print(f"✗ Error: {e}")
-        return jsonify({'reply': f'For assistance with "{user_msg}", please call +91 9071660066 or email shivu@pasfreight.com'})
+        return jsonify({'reply': "For assistance with PAS Freight services, call +91 90361 01201 or email shivu@pasfreight.com"})
 
 if __name__ == '__main__':
-    print("=" * 50)
-    print("🚀 PAS Freight Professional AI Assistant")
-    print("📱 Open: http://localhost:5001")
-    print("=" * 50)
+    print("=" * 60)
+    print("PAS Freight AI Assistant - Professional Version")
+    print("Open: http://localhost:5001")
+    print("=" * 60)
     app.run(host='0.0.0.0', port=5001, debug=False)

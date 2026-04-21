@@ -1,255 +1,515 @@
 ﻿import openai
 from flask import Flask, request, jsonify, render_template_string
-import json
-import os
-from datetime import datetime
 
 app = Flask(__name__)
 
 openai.api_key = "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"
 openai.api_base = "https://openrouter.ai/api/v1"
 
-USER_DATA_FILE = "users.json"
-
-def save_user(name, email, phone):
-    users = []
-    if os.path.exists(USER_DATA_FILE):
-        with open(USER_DATA_FILE, 'r') as f:
-            try:
-                users = json.load(f)
-            except:
-                users = []
-    users.append({"name": name, "email": email, "phone": phone, "time": str(datetime.now())})
-    with open(USER_DATA_FILE, 'w') as f:
-        json.dump(users, f, indent=2)
-
 HTML = '''
 <!DOCTYPE html>
 <html>
 <head>
-    <title>PAS Freight AI - Advanced Assistant</title>
+    <title>PAS Freight AI</title>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
-            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #343541;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
         }
-        .chat-box {
-            max-width: 1000px;
+        .chat-container {
             width: 100%;
-            height: 90vh;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-            overflow: hidden;
+            max-width: 800px;
+            height: 100vh;
+            background: #343541;
             display: flex;
             flex-direction: column;
         }
         .header {
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
-            color: white;
-            padding: 20px;
+            background: #202123;
+            color: #ececec;
+            padding: 12px 20px;
             text-align: center;
+            border-bottom: 1px solid #4a4b53;
         }
-        .header h1 { font-size: 24px; }
-        .header p { font-size: 12px; opacity: 0.9; margin-top: 5px; }
-        .form-area {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #f8f9fa;
-        }
-        .form-card {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        }
-        .form-card h3 { color: #1e3c72; margin-bottom: 20px; text-align: center; }
-        .form-card input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .form-card button {
-            width: 100%;
-            padding: 12px;
-            background: #2a5298;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-        .chat-area {
-            flex: 1;
-            display: none;
-            flex-direction: column;
-        }
+        .header h1 { font-size: 16px; font-weight: 500; }
+        .header p { font-size: 11px; opacity: 0.7; margin-top: 3px; }
         .messages {
             flex: 1;
             overflow-y: auto;
             padding: 20px;
-            background: #f8f9fa;
         }
-        .msg { margin-bottom: 16px; display: flex; }
-        .user { justify-content: flex-end; }
-        .bot { justify-content: flex-start; }
-        .bubble {
-            padding: 10px 16px;
-            border-radius: 20px;
-            max-width: 75%;
-            font-size: 14px;
-            line-height: 1.5;
-            word-wrap: break-word;
-        }
-        .user .bubble { background: #2a5298; color: white; border-bottom-right-radius: 4px; }
-        .bot .bubble { background: white; color: #333; border: 1px solid #e0e0e0; border-bottom-left-radius: 4px; }
-        .input-area {
-            padding: 20px;
-            background: white;
+        .msg {
+            margin-bottom: 20px;
             display: flex;
-            gap: 12px;
-            border-top: 1px solid #e5e5e5;
+            animation: fadeIn 0.3s ease;
         }
-        .input-area input {
-            flex: 1;
-            padding: 12px 16px;
-            border: 1px solid #ddd;
-            border-radius: 25px;
-            font-size: 14px;
-            outline: none;
-        }
-        .input-area input:focus { border-color: #2a5298; }
-        .input-area button {
-            padding: 12px 24px;
-            background: #2a5298;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-        .typing { color: #999; font-style: italic; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .msg { animation: fadeIn 0.3s ease; }
+        .user { justify-content: flex-end; }
+        .bot { justify-content: flex-start; }
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .bot-avatar { background: #10a37f; color: white; margin-right: 12px; }
+        .user-avatar { background: #5436da; color: white; margin-left: 12px; order: 2; }
+        .bubble {
+            max-width: 80%;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .user .bubble { background: #5436da; color: white; border-bottom-right-radius: 4px; }
+        .bot .bubble { background: #444654; color: #ececec; border-bottom-left-radius: 4px; }
+        .service-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .service-btn {
+            background: #40414f;
+            border: 1px solid #565869;
+            padding: 10px 16px;
+            border-radius: 25px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #ececec;
+            transition: all 0.2s;
+        }
+        .service-btn:hover { background: #565869; transform: scale(0.98); }
+        .contact-info {
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .contact-info p { margin: 5px 0; }
+        .input-container {
+            padding: 16px 20px;
+            background: #40414f;
+            border-top: 1px solid #4a4b53;
+        }
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #40414f;
+            border: 1px solid #565869;
+            border-radius: 28px;
+            padding: 6px 8px 6px 18px;
+        }
+        .input-wrapper input {
+            flex: 1;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+        .input-wrapper input::placeholder { color: #8e8ea0; }
+        .tool-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 6px;
+            border-radius: 50%;
+            color: #8e8ea0;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tool-btn:hover { background: #565869; color: white; }
+        .voice-active { background: #ef4444 !important; color: white !important; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .send-btn {
+            background: #10a37f;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        .send-btn:hover { background: #1a7f64; }
+        .quick-buttons {
+            padding: 12px 20px;
+            background: #343541;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            border-bottom: 1px solid #4a4b53;
+        }
+        .quick-btn {
+            background: #40414f;
+            border: 1px solid #565869;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #ececec;
+        }
+        .quick-btn:hover { background: #565869; }
+        .footer {
+            text-align: center;
+            padding: 8px;
+            font-size: 10px;
+            color: #565869;
+            background: #343541;
+        }
+        .image-preview {
+            max-width: 150px;
+            max-height: 120px;
+            border-radius: 12px;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+        .typing {
+            display: inline-flex;
+            gap: 4px;
+            padding: 4px 0;
+        }
+        .typing span {
+            width: 6px;
+            height: 6px;
+            background: #8e8ea0;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite;
+        }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+        .messages::-webkit-scrollbar { width: 6px; }
+        .messages::-webkit-scrollbar-track { background: #40414f; }
+        .messages::-webkit-scrollbar-thumb { background: #565869; border-radius: 3px; }
     </style>
 </head>
 <body>
-    <div class="chat-box">
-        <div class="header">
-            <h1>📦 PAS Freight Services</h1>
-            <p>Advanced AI Assistant | 24/7 Support</p>
-        </div>
-        
-        <div id="formSection" class="form-area">
-            <div class="form-card">
-                <h3>✨ Welcome to PAS Freight AI</h3>
-                <input type="text" id="userName" placeholder="Your Name *">
-                <input type="email" id="userEmail" placeholder="Email Address *">
-                <input type="tel" id="userPhone" placeholder="Phone Number">
-                <button onclick="startChat()">Start Conversation →</button>
-            </div>
-        </div>
-        
-        <div id="chatSection" class="chat-area">
-            <div class="messages" id="messages">
-                <div class="msg bot">
-                    <div class="bubble">👋 Hey! I'm your PAS Freight AI. Ask me anything about shipping, freight, or logistics. I speak English, Hindi, and Kannada!</div>
-                </div>
-            </div>
-            <div class="input-area">
-                <input type="text" id="input" placeholder="Type in English, Hindi, or Kannada..." autocomplete="off">
-                <button onclick="sendMessage()">Send</button>
-            </div>
+<div class="chat-container">
+    <div class="header">
+        <h1>📦 PAS Freight Services Pvt Ltd</h1>
+        <p>WCA & GLA Certified | 24/7 Support</p>
+    </div>
+
+    <div class="messages" id="messages">
+        <div class="msg bot">
+            <div class="avatar bot-avatar">🤖</div>
+            <div class="bubble">✨ Namaste! I'm PAS Freight's AI assistant. I can help with import/export, customs clearance, and cargo services. How can I help you today?</div>
         </div>
     </div>
 
-    <script>
-        let userName = '';
+    <div class="quick-buttons">
+        <button class="quick-btn" onclick="showMainMenu()">📦 Main Menu</button>
+        <button class="quick-btn" onclick="showContact()">📞 Contact Us</button>
+        <button class="quick-btn" onclick="showAbout()">🏢 About Us</button>
+    </div>
+
+    <div class="input-container">
+        <div class="input-wrapper">
+            <input type="text" id="userInput" placeholder="Ask me anything about logistics...">
+            <button class="tool-btn" id="voiceBtn" title="Voice Input">🎤</button>
+            <button class="tool-btn" id="cameraBtn" title="Upload Screenshot">📷</button>
+            <button class="send-btn" id="sendBtn">➤</button>
+            <input type="file" id="cameraInput" style="display:none" accept="image/*">
+        </div>
+    </div>
+    <div class="footer">PAS Freight | 24/7 Support | +91 9071660066</div>
+</div>
+
+<script>
+    let recognition = null;
+    let isListening = false;
+    let isVoiceMode = false;
+
+    if ('webkitSpeechRecognition' in window) {
+        recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-IN';
         
-        async function startChat() {
-            const name = document.getElementById('userName').value.trim();
-            const email = document.getElementById('userEmail').value.trim();
-            const phone = document.getElementById('userPhone').value.trim();
-            
-            if (!name || !email) {
-                alert('Please enter your name and email');
-                return;
-            }
-            
-            userName = name;
-            
-            await fetch('/save_user', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name: name, email: email, phone: phone})
-            });
-            
-            document.getElementById('formSection').style.display = 'none';
-            document.getElementById('chatSection').style.display = 'flex';
-            
-            const messagesDiv = document.getElementById('messages');
-            const welcome = document.createElement('div');
-            welcome.className = 'msg bot';
-            welcome.innerHTML = '<div class="bubble">Namaste ' + name + '! 👋 How can I help you today?</div>';
-            messagesDiv.appendChild(welcome);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        recognition.onresult = function(event) {
+            const text = event.results[0][0].transcript;
+            document.getElementById('userInput').value = text;
+            document.getElementById('voiceBtn').classList.remove('voice-active');
+            isListening = false;
+            isVoiceMode = true;
+            sendMessage();
+        };
+        
+        recognition.onerror = function() {
+            document.getElementById('voiceBtn').classList.remove('voice-active');
+            isListening = false;
+            addMessage("🎤 Sorry, couldn't hear you. Please type your question.", false);
+        };
+        
+        recognition.onend = function() {
+            document.getElementById('voiceBtn').classList.remove('voice-active');
+            isListening = false;
+        };
+    }
+    
+    document.getElementById('voiceBtn').onclick = function() {
+        if (!recognition) {
+            addMessage("🎤 Voice support requires Chrome browser.", false);
+            return;
         }
-        
-        const messagesDiv = document.getElementById('messages');
-        const input = document.getElementById('input');
-        
-        function addMessage(text, isUser) {
-            const div = document.createElement('div');
-            div.className = 'msg ' + (isUser ? 'user' : 'bot');
-            div.innerHTML = '<div class="bubble">' + text.replace(/\\n/g, '<br>') + '</div>';
-            messagesDiv.appendChild(div);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        if (isListening) {
+            recognition.stop();
+        } else {
+            recognition.start();
+            this.classList.add('voice-active');
+            isListening = true;
         }
-        
-        async function sendMessage() {
-            const text = input.value.trim();
-            if (!text) return;
-            input.value = '';
-            addMessage(text, true);
-            
-            const typing = document.createElement('div');
-            typing.className = 'msg bot';
-            typing.innerHTML = '<div class="bubble typing">...</div>';
-            messagesDiv.appendChild(typing);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            
-            const res = await fetch('/chat', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({message: text, user_name: userName})
-            });
-            const data = await res.json();
-            typing.remove();
-            addMessage(data.reply, false);
+    };
+    
+    document.getElementById('cameraBtn').onclick = () => document.getElementById('cameraInput').click();
+    document.getElementById('cameraInput').onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const div = document.createElement('div');
+                div.className = 'msg user';
+                div.innerHTML = `<div class="avatar user-avatar">👤</div>
+                                <div class="bubble">📷 <strong>Screenshot uploaded</strong><br><img src="${event.target.result}" class="image-preview" onclick="window.open(this.src)"></div>`;
+                document.getElementById('messages').appendChild(div);
+                div.scrollIntoView({ behavior: 'smooth' });
+                
+                setTimeout(() => {
+                    addMessage("✅ Thanks for sharing! Our team will review it. For immediate help, call +91 9071660066", false);
+                }, 500);
+            };
+            reader.readAsDataURL(file);
         }
+        this.value = '';
+    };
+
+    function addMessage(text, isUser) {
+        const div = document.createElement('div');
+        div.className = 'msg ' + (isUser ? 'user' : 'bot');
+        div.innerHTML = `<div class="avatar ${isUser ? 'user-avatar' : 'bot-avatar'}">${isUser ? '👤' : '🤖'}</div>
+                        <div class="bubble">${text}</div>`;
+        document.getElementById('messages').appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function addContactInfo(title, numbers, emails) {
+        let html = `<div class="contact-info"><strong>${title}</strong><br>`;
+        if (numbers && numbers.length) {
+            html += `📞 <strong>Phone:</strong><br>`;
+            numbers.forEach(num => { html += `   ${num}<br>`; });
+        }
+        if (emails && emails.length) {
+            html += `✉️ <strong>Email:</strong><br>`;
+            emails.forEach(email => { html += `   ${email}<br>`; });
+        }
+        html += `</div>`;
         
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `<div class="avatar bot-avatar">🤖</div><div class="bubble">${html}</div>`;
+        document.getElementById('messages').appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showMainMenu() {
+        addMessage("Main Menu", true);
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `<div class="avatar bot-avatar">🤖</div>
+                        <div class="bubble">📦 <strong>Select a service:</strong><br>
+                        <div class="service-buttons">
+                            <button class="service-btn" onclick="showImportOptions()">📥 IMPORT</button>
+                            <button class="service-btn" onclick="showExportOptions()">📤 EXPORT</button>
+                            <button class="service-btn" onclick="showCustoms()">📋 CUSTOMS CLEARANCE</button>
+                            <button class="service-btn" onclick="showCargo()">🚚 CARGO</button>
+                        </div></div>`;
+        document.getElementById('messages').appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showImportOptions() {
+        addMessage("IMPORT", true);
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `<div class="avatar bot-avatar">🤖</div>
+                        <div class="bubble">📥 <strong>IMPORT - Select Mode:</strong><br>
+                        <div class="service-buttons">
+                            <button class="service-btn" onclick="showImportAir()">✈️ AIR</button>
+                            <button class="service-btn" onclick="showImportSea()">🚢 SEA</button>
+                        </div></div>`;
+        document.getElementById('messages').appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showImportAir() {
+        addMessage("IMPORT - AIR", true);
+        addContactInfo("IMPORT AIR FREIGHT", 
+            ["+91 93648 81378", "+91 63615 21413"],
+            ["enquiry@pasfreight.com", "gj@pasfreight.com"]);
+    }
+
+    function showImportSea() {
+        addMessage("IMPORT - SEA", true);
+        addContactInfo("IMPORT SEA FREIGHT (FCL/LCL)", 
+            ["+91 93648 81371"],
+            ["enquiry@pasfreight.com", "vinodh@pasfreight.com"]);
+    }
+
+    function showExportOptions() {
+        addMessage("EXPORT", true);
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `<div class="avatar bot-avatar">🤖</div>
+                        <div class="bubble">📤 <strong>EXPORT - Select Mode:</strong><br>
+                        <div class="service-buttons">
+                            <button class="service-btn" onclick="showExportAir()">✈️ AIR</button>
+                            <button class="service-btn" onclick="showExportSea()">🚢 SEA</button>
+                        </div></div>`;
+        document.getElementById('messages').appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showExportAir() {
+        addMessage("EXPORT - AIR", true);
+        addContactInfo("EXPORT AIR FREIGHT", 
+            ["+91 93648 81378", "+91 63615 21413"],
+            ["info@pasfreight.com", "gj@pasfreight.com"]);
+    }
+
+    function showExportSea() {
+        addMessage("EXPORT - SEA", true);
+        addContactInfo("EXPORT SEA FREIGHT", 
+            ["+91 93648 81371"],
+            ["info@pasfreight.com", "vinodh@pasfreight.com"]);
+    }
+
+    function showCustoms() {
+        addMessage("CUSTOMS CLEARANCE", true);
+        addContactInfo("CUSTOMS CLEARANCE", 
+            ["+91 63615 26664"],
+            ["ajith@pasfreight.com", "edi.blr@pasfreight.com"]);
+    }
+
+    function showCargo() {
+        addMessage("CARGO", true);
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `<div class="avatar bot-avatar">🤖</div>
+                        <div class="bubble">🚚 <strong>CARGO - Select Type:</strong><br>
+                        <div class="service-buttons">
+                            <button class="service-btn" onclick="showDomesticCargo()">🇮🇳 DOMESTIC</button>
+                            <button class="service-btn" onclick="showInternationalCargo()">🌍 INTERNATIONAL</button>
+                        </div></div>`;
+        document.getElementById('messages').appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showDomesticCargo() {
+        addMessage("DOMESTIC CARGO", true);
+        addContactInfo("DOMESTIC CARGO", 
+            ["+91 63615 26659"],
+            ["kavan@pasfreight.com", "info@pasfreight.com"]);
+    }
+
+    function showInternationalCargo() {
+        addMessage("INTERNATIONAL CARGO", true);
+        addContactInfo("INTERNATIONAL CARGO", 
+            ["+91 63615 26659"],
+            ["kavan@pasfreight.com", "info@pasfreight.com"]);
+    }
+
+    function showContact() {
+        addMessage("Contact Us", true);
+        addContactInfo("PAS FREIGHT CONTACT", 
+            ["+91 90716 60066", "+91 63615 26643"],
+            ["priya.c@pasfreight.com", "sales.blr@pasfreight.com"]);
+    }
+
+    function showAbout() {
+        addMessage("About Us", true);
+        const div = document.createElement('div');
+        div.className = 'msg bot';
+        div.innerHTML = `<div class="avatar bot-avatar">🤖</div>
+                        <div class="bubble">🏢 <strong>PAS Freight Services Pvt Ltd</strong><br><br>
+                        📍 <strong>Address:</strong> Site No:171, Arkavathey Layout, 7th Block, Jakkur-BDA, Bangalore - 560092<br><br>
+                        📞 <strong>Contact:</strong> +91 9071660066, +91 9164466664<br><br>
+                        ✉️ <strong>Email:</strong> shivu@pasfreight.com<br><br>
+                        ✅ <strong>Certifications:</strong> WCA (115513), GLA (1166251)<br><br>
+                        🌟 <strong>Experience:</strong> Over 8 years in logistics<br><br>
+                        💼 <strong>Services:</strong> Import, Export, Customs, Cargo, Air & Sea Freight<br><br>
+                        🎯 <strong>Vision:</strong> To be Bangalore's most trusted logistics partner</div>`;
+        document.getElementById('messages').appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('userInput');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        addMessage(text, true);
+        
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'msg bot';
+        typingDiv.id = 'typing';
+        typingDiv.innerHTML = `<div class="avatar bot-avatar">🤖</div><div class="typing"><span></span><span></span><span></span></div>`;
+        document.getElementById('messages').appendChild(typingDiv);
+        typingDiv.scrollIntoView({ behavior: 'smooth' });
+        
+        const res = await fetch('/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: text})
         });
-    </script>
+        const data = await res.json();
+        
+        const typing = document.getElementById('typing');
+        if (typing) typing.remove();
+        
+        addMessage(data.reply, false);
+        
+        if (isVoiceMode && 'speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(data.reply);
+            utterance.lang = 'en-IN';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+            isVoiceMode = false;
+        }
+    }
+
+    document.getElementById('sendBtn').onclick = () => { isVoiceMode = false; sendMessage(); };
+    document.getElementById('userInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            isVoiceMode = false;
+            sendMessage();
+        }
+    });
+</script>
 </body>
 </html>
 '''
@@ -258,46 +518,34 @@ HTML = '''
 def index():
     return render_template_string(HTML)
 
-@app.route('/save_user', methods=['POST'])
-def save_user():
-    data = request.get_json()
-    save_user(data.get('name', ''), data.get('email', ''), data.get('phone', ''))
-    return jsonify({'status': 'ok'})
-
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.get_json()
     user_msg = data.get('message', '')
-    user_name = data.get('user_name', '')
     
-    system_prompt = """You are PAS Freight's advanced AI assistant. 
+    system_prompt = """You are PAS Freight's friendly AI assistant. Be conversational, warm, and helpful.
 
 IMPORTANT RULES:
-1. Give SHORT, CONVERSATIONAL answers (1-2 sentences max)
-2. Respond in the SAME LANGUAGE as the user (Kannada, Hindi, English, or mix)
-3. Be friendly, warm, and human-like
-4. Understand typos and incorrect spelling
-5. For rates: Say "Call +91 9071660066 for best rates"
-6. Remember user's name and use it naturally
-7. NO bullet points, NO numbered lists
-8. Just chat like a helpful friend
+1. For greetings like "hi", "hello", "hey" -> Respond warmly and offer help
+2. For logistics questions -> Give specific PAS Freight information
+3. For non-logistics questions -> Politely redirect to PAS Freight services
+4. Keep responses conversational and use emojis occasionally
+5. Always be helpful and solution-oriented
 
-Company: PAS Freight Services, Bangalore
+Company Info:
+PAS Freight Services Pvt Ltd - Bangalore's leading logistics provider
+Services: Import/Export (Air/Sea), Customs Clearance, Domestic/International Cargo
 Contact: +91 9071660066
-Services: Air/Sea freight, Customs clearance, Trucking, Warehousing
+Email: shivu@pasfreight.com
+Certifications: WCA (115513), GLA (1166251)
 
 Examples:
-User: "nimma kannada chenagi ill astondhu" 
-You: "Naanu try madthini! Hege help madbeku?"
+User: "hi" -> "Hey there! Welcome to PAS Freight. How can I help you with your logistics needs today?"
+User: "What services?" -> "We offer comprehensive logistics services! Import/Export by Air & Sea, Customs Clearance, and Domestic & International Cargo."
+User: "rates" -> "For exact rates, please call us at +91 9071660066. Our team will provide you the best quote!"
 
-User: "i need rates for shipping"
-You: "Call +91 9071660066 - our team will give you the best rates!"
+Be conversational, helpful, and friendly!"""
 
-User: "what services"
-You: "Air/sea freight, customs clearance, and trucking. Need anything specific?"
-
-Be natural, be helpful, be conversational."""
-    
     try:
         response = openai.ChatCompletion.create(
             model="openai/gpt-4o-mini",
@@ -305,20 +553,18 @@ Be natural, be helpful, be conversational."""
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_msg}
             ],
-            max_tokens=120,
+            max_tokens=200,
             temperature=0.8
         )
         reply = response['choices'][0]['message']['content']
-        print(f"✓ {user_name}: {user_msg[:50]}")
         return jsonify({'reply': reply})
     except Exception as e:
-        print(f"✗ Error: {e}")
-        return jsonify({'reply': f'Hey {user_name}! Call +91 9071660066 and we will help you right away!'})
+        return jsonify({'reply': "Hey there! Thanks for reaching out to PAS Freight. For immediate assistance, please call us at +91 9071660066 or email shivu@pasfreight.com. Our team is available 24/7!"})
 
 if __name__ == '__main__':
-    print("=" * 50)
-    print("🚀 PAS Freight ADVANCED AI Assistant")
-    print("📱 Open: http://localhost:5001")
-    print("💬 Supports: English, Hindi, Kannada")
-    print("=" * 50)
+    print("=" * 60)
+    print("PAS Freight ADVANCED AI Assistant")
+    print("Open: http://localhost:5001")
+    print("Smart conversational AI")
+    print("=" * 60)
     app.run(host='0.0.0.0', port=5001, debug=False)

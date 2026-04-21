@@ -1,0 +1,370 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Aisea - Smart Logistics AI</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+        
+        .demo-container {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .demo-title {
+            margin-bottom: 20px;
+            color: #1e3c72;
+        }
+        
+        #aisea-chat-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            z-index: 999999;
+        }
+        #aisea-chat-btn:hover { transform: scale(1.08); }
+        .chat-icon { font-size: 28px; color: white; }
+        
+        .notification-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+        
+        #aisea-chat-window {
+            position: fixed;
+            bottom: 90px;
+            right: 24px;
+            width: 400px;
+            height: 600px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 24px 48px rgba(0,0,0,0.25);
+            display: none;
+            z-index: 999998;
+            overflow: hidden;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-info { display: flex; align-items: center; gap: 10px; }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .header-text h3 { font-size: 16px; font-weight: 600; }
+        .header-text p { font-size: 10px; opacity: 0.8; margin-top: 2px; }
+        
+        .close-chat {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+        .close-chat:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #f7f9fc;
+        }
+        .message { margin-bottom: 16px; display: flex; animation: slideIn 0.3s ease; }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .user-message { justify-content: flex-end; }
+        .bot-message { justify-content: flex-start; }
+        
+        .bubble {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+        .user-message .bubble {
+            background: #2a5298;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        .bot-message .bubble {
+            background: white;
+            color: #1a202c;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            white-space: pre-wrap;
+        }
+        
+        .main-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .main-btn {
+            background: #f1f5f9;
+            color: #1e293b;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 24px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .main-btn:hover { background: #2a5298; color: white; transform: translateY(-1px); }
+        
+        .chat-input {
+            padding: 12px 16px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 28px;
+            font-size: 13px;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+        }
+        .chat-input input:focus {
+            border-color: #2a5298;
+            box-shadow: 0 0 0 3px rgba(42,82,152,0.1);
+        }
+        .chat-input button {
+            background: #2a5298;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        .chat-input button:hover { background: #1e3c72; transform: scale(1.02); }
+        
+        .typing {
+            display: inline-flex;
+            gap: 5px;
+            padding: 6px 0;
+        }
+        .typing span {
+            width: 7px;
+            height: 7px;
+            background: #94a3b8;
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite;
+        }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+        
+        .chat-messages::-webkit-scrollbar { width: 5px; }
+        .chat-messages::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 10px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+        
+        @media (max-width: 500px) {
+            #aisea-chat-window {
+                width: 100%;
+                height: 100%;
+                bottom: 0;
+                right: 0;
+                border-radius: 0;
+            }
+            #aisea-chat-btn { bottom: 16px; right: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1 class="demo-title">Aisea - Smart Logistics Assistant</h1>
+        <p>Click the chat button at the bottom right to start chatting with Aisea</p>
+    </div>
+    
+    <button id="aisea-chat-btn">
+        <span class="chat-icon">💬</span>
+        <span class="notification-badge" id="notificationBadge" style="display: none;">1</span>
+    </button>
+    
+    <div id="aisea-chat-window">
+        <div class="chat-header">
+            <div class="header-info">
+                <div class="avatar">📦</div>
+                <div class="header-text">
+                    <h3>Aisea</h3>
+                    <p>Smart Logistics AI • 24/7</p>
+                </div>
+            </div>
+            <button class="close-chat" id="closeChatBtn">✕</button>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">
+                <div class="bubble">Hi, I'm Aisea, your smart logistics assistant. I can help with quotes, shipping advice, customs clearance, and more. Ask me anything!</div>
+            </div>
+            <div class="message bot-message">
+                <div class="bubble">
+                    <div class="main-buttons">
+                        <button class="main-btn" onclick="sendQuick('I need a quote for shipping')">Get Quote</button>
+                        <button class="main-btn" onclick="sendQuick('What services do you offer?')">Services</button>
+                        <button class="main-btn" onclick="sendQuick('Tell me about customs clearance')">Customs</button>
+                        <button class="main-btn" onclick="sendQuick('Contact PAS Freight')">Contact</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <input type="text" id="userInput" placeholder="Ask Aisea for a quote, shipping advice..." autocomplete="off">
+            <button id="sendBtn">➤</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5001/chat';
+        
+        const chatBtn = document.getElementById('aisea-chat-btn');
+        const chatWindow = document.getElementById('aisea-chat-window');
+        const closeChatBtn = document.getElementById('closeChatBtn');
+        const notificationBadge = document.getElementById('notificationBadge');
+        const messagesDiv = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        
+        let isOpen = false;
+        let notified = false;
+        
+        chatBtn.addEventListener('click', function() {
+            if (isOpen) {
+                chatWindow.style.display = 'none';
+                isOpen = false;
+            } else {
+                chatWindow.style.display = 'flex';
+                isOpen = true;
+                notificationBadge.style.display = 'none';
+                notified = true;
+            }
+        });
+        
+        closeChatBtn.addEventListener('click', function() {
+            chatWindow.style.display = 'none';
+            isOpen = false;
+        });
+        
+        setTimeout(function() {
+            if (!isOpen && !notified) {
+                notificationBadge.style.display = 'flex';
+            }
+        }, 30000);
+        
+        function addMessage(text, isUser) {
+            const div = document.createElement('div');
+            div.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            div.innerHTML = `<div class="bubble">${text.replace(/\n/g, '<br>')}</div>`;
+            messagesDiv.appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function showTyping() {
+            const div = document.createElement('div');
+            div.className = 'message bot-message';
+            div.id = 'typing';
+            div.innerHTML = '<div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+            messagesDiv.appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function hideTyping() {
+            const typing = document.getElementById('typing');
+            if (typing) typing.remove();
+        }
+        
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+            userInput.value = '';
+            addMessage(text, true);
+            showTyping();
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+                const data = await response.json();
+                hideTyping();
+                addMessage(data.reply, false);
+            } catch(error) {
+                hideTyping();
+                addMessage('I am Aisea. For assistance, call +91 90361 01201 or email shivu@pasfreight.com', false);
+            }
+        }
+        
+        function sendQuick(text) {
+            userInput.value = text;
+            sendMessage();
+        }
+        
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+        
+        window.sendQuick = sendQuick;
+    </script>
+</body>
+</html>
